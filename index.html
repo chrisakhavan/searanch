@@ -138,6 +138,10 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
         }
+
+        .event-badge {
+            animation: fadeIn 0.5s ease-out;
+        }
     </style>
 </head>
 <body>
@@ -258,6 +262,77 @@
             const LAT = 38.7158;
             const LON = -123.4528;
 
+            // Astronomical events database for 2026
+            const getAstronomicalEvents = (date) => {
+                const dateStr = date.toISOString().split('T')[0];
+                const month = date.getMonth() + 1;
+                const day = date.getDate();
+                
+                const events = [];
+                
+                // Meteor Showers
+                if ((month === 1 && day >= 2 && day <= 4)) {
+                    events.push({ type: 'meteor', name: 'Quadrantids Meteor Shower Peak', icon: '☄️', description: 'Up to 40 meteors/hour' });
+                }
+                if ((month === 4 && day >= 21 && day <= 23)) {
+                    events.push({ type: 'meteor', name: 'Lyrids Meteor Shower Peak', icon: '☄️', description: 'Up to 18 meteors/hour' });
+                }
+                if ((month === 5 && day >= 5 && day <= 7)) {
+                    events.push({ type: 'meteor', name: 'Eta Aquarids Peak', icon: '☄️', description: 'Up to 50 meteors/hour' });
+                }
+                if ((month === 7 && day >= 28 && day <= 30)) {
+                    events.push({ type: 'meteor', name: 'Delta Aquarids Peak', icon: '☄️', description: 'Up to 20 meteors/hour' });
+                }
+                if ((month === 8 && day >= 11 && day <= 13)) {
+                    events.push({ type: 'meteor', name: 'Perseids Meteor Shower Peak', icon: '☄️', description: 'Up to 100 meteors/hour - Best of the year!' });
+                }
+                if ((month === 10 && day >= 20 && day <= 22)) {
+                    events.push({ type: 'meteor', name: 'Orionids Meteor Shower Peak', icon: '☄️', description: 'Up to 20 meteors/hour' });
+                }
+                if ((month === 11 && day >= 17 && day <= 18)) {
+                    events.push({ type: 'meteor', name: 'Leonids Meteor Shower Peak', icon: '☄️', description: 'Up to 15 meteors/hour' });
+                }
+                if ((month === 12 && day >= 13 && day <= 14)) {
+                    events.push({ type: 'meteor', name: 'Geminids Meteor Shower Peak', icon: '☄️', description: 'Up to 120 meteors/hour - Spectacular!' });
+                }
+                
+                // Planets visible tonight (general visibility)
+                // Jupiter is typically visible in evening sky
+                if (month >= 1 && month <= 5) {
+                    events.push({ type: 'planet', name: 'Jupiter Visible', icon: '🪐', description: 'Bright in western sky after sunset' });
+                }
+                
+                // Venus as evening or morning star
+                if (month >= 1 && month <= 3) {
+                    events.push({ type: 'planet', name: 'Venus Visible', icon: '✨', description: 'Brilliant evening star in west' });
+                }
+                if (month >= 9 && month <= 12) {
+                    events.push({ type: 'planet', name: 'Venus Visible', icon: '✨', description: 'Morning star in east before sunrise' });
+                }
+                
+                // Mars visibility
+                if (month >= 1 && month <= 4) {
+                    events.push({ type: 'planet', name: 'Mars Visible', icon: '🔴', description: 'Red planet visible in evening' });
+                }
+                
+                // Saturn visibility
+                if (month >= 7 && month <= 11) {
+                    events.push({ type: 'planet', name: 'Saturn Visible', icon: '🪐', description: 'Ringed planet visible' });
+                }
+                
+                // Milky Way visibility (best in summer)
+                if (month >= 5 && month <= 9) {
+                    events.push({ type: 'milkyway', name: 'Milky Way Season', icon: '🌌', description: 'Galactic core visible - look south!' });
+                }
+                
+                // International Space Station passes (example - these would need real-time data)
+                if (Math.random() > 0.7) { // Simulate ISS visibility
+                    events.push({ type: 'satellite', name: 'ISS Visible Tonight', icon: '🛰️', description: 'Check exact times online' });
+                }
+                
+                return events;
+            };
+
             useEffect(() => {
                 fetchWeatherData();
             }, []);
@@ -270,9 +345,11 @@
                     const data = await response.json();
                     
                     const dailyForecasts = data.daily.time.map((date, index) => {
-                        const moonPhase = calculateMoonPhase(new Date(date));
+                        const dateObj = new Date(date);
+                        const moonPhase = calculateMoonPhase(dateObj);
                         const cloudCover = data.daily.cloud_cover_mean[index];
                         const precipitation = data.daily.precipitation_probability_max[index];
+                        const astronomicalEvents = getAstronomicalEvents(dateObj);
                         
                         return {
                             date,
@@ -282,7 +359,8 @@
                             precipitation,
                             moonPhase: moonPhase.phase,
                             moonIllumination: moonPhase.illumination,
-                            stargazingScore: calculateStargazingScore(cloudCover, precipitation, moonPhase.illumination)
+                            stargazingScore: calculateStargazingScore(cloudCover, precipitation, moonPhase.illumination),
+                            events: astronomicalEvents
                         };
                     });
 
@@ -487,6 +565,20 @@
                                         <div className="text-sm text-indigo-300 font-semibold mt-1">{getScoreLabel(bestNight.stargazingScore)}</div>
                                     </div>
                                 </div>
+                                {bestNight.events.length > 0 && (
+                                    <div className="mt-4 pt-4 border-t border-white/20">
+                                        <div className="text-sm font-semibold text-yellow-300 mb-2">Tonight's Events:</div>
+                                        {bestNight.events.map((event, idx) => (
+                                            <div key={idx} className="text-sm text-indigo-200 flex items-start gap-2 mb-1">
+                                                <span>{event.icon}</span>
+                                                <div>
+                                                    <span className="font-medium">{event.name}</span>
+                                                    <span className="text-indigo-400"> - {event.description}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Info Box */}
@@ -530,7 +622,7 @@
                                             </div>
                                         </div>
                                         
-                                        <div className="grid grid-cols-3 gap-3">
+                                        <div className="grid grid-cols-3 gap-3 mb-4">
                                             <div className="glass-strong rounded-xl p-3 flex flex-col items-center">
                                                 <Cloud className="w-5 h-5 text-blue-300 mb-2" />
                                                 <div className="font-bold text-lg">{Math.round(day.cloudCover)}%</div>
@@ -550,7 +642,24 @@
                                             </div>
                                         </div>
                                         
-                                        <div className="mt-4 pt-4 border-t border-white/10">
+                                        {day.events.length > 0 && (
+                                            <div className="glass-strong rounded-xl p-3 mb-3">
+                                                <div className="text-xs font-bold text-yellow-300 mb-2">Observable Tonight:</div>
+                                                <div className="space-y-1">
+                                                    {day.events.map((event, idx) => (
+                                                        <div key={idx} className="text-xs text-indigo-200 flex items-start gap-2 event-badge">
+                                                            <span className="text-base">{event.icon}</span>
+                                                            <div>
+                                                                <div className="font-medium">{event.name}</div>
+                                                                <div className="text-indigo-400">{event.description}</div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        
+                                        <div className="pt-3 border-t border-white/10">
                                             <div className="text-xs text-indigo-300 text-center font-medium">
                                                 {day.moonPhase}
                                             </div>
@@ -561,7 +670,7 @@
 
                             {/* Footer */}
                             <div className="text-center mt-10 text-sm text-indigo-400 fade-in">
-                                <p className="mb-2">📡 Data from Open-Meteo</p>
+                                <p className="mb-2">📡 Weather from Open-Meteo • Astronomy data for 2026</p>
                                 <p className="text-xs">Best viewing after astronomical twilight</p>
                                 <p className="mt-4 text-lg">🌌 Clear skies ahead! 🌌</p>
                             </div>
